@@ -37,7 +37,7 @@ Client (UI / Postman) ─► Nginx (ALB local) ─► Spring Cloud Gateway ×2 (
 
 Java 21 (virtual threads) · Spring Boot 4.1 · **Spring AI 2.0.2** · Spring Cloud 2025.1 (Gateway WebFlux, Eureka, LoadBalancer) ·
 PostgreSQL 17 + pgvector · Flyway · JobRunr 9 · OpenAI (`gpt-4o`, `gpt-4o-mini`, `text-embedding-3-small`) sau Ollama (`llama3.2`, `nomic-embed-text`) ·
-HuggingFace TEI (reranker) · Nginx · Docker Compose · Prometheus + Grafana · GitHub Actions (build, Gitleaks, OWASP Dependency-Check, Trivy).
+HuggingFace TEI (reranker) · Nginx · Docker Compose · Prometheus + Grafana · GitHub Actions (build + teste).
 
 > **Notă despre versiuni:** cerința spune „Spring Boot 3.x” și „Spring AI 2.0+”. Spring AI 2.0 funcționează doar pe Spring Boot 4,
 > iar Boot 3.5 a ieșit din suportul OSS în iunie 2026, așa că proiectul folosește Boot 4.1 (vezi [docs/decisions.md](docs/decisions.md), ADR-001).

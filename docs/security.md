@@ -44,7 +44,7 @@ backpressure (429 când coada de ingestie e plină).
 | A02 Cryptographic failures | AES-256-GCM, RS256, BCrypt (cost 10), TLS terminat în Nginx/ALB în producție. |
 | A03 Injection | SQL exclusiv parametrizat (inclusiv filtrul FTS), lexeme FTS citate cu `quote_literal`. |
 | A05 Security misconfiguration | headere de securitate în Nginx, Actuator expune doar health/info/prometheus, servicii fără porturi publice, containere non-root. |
-| A06 Vulnerable components | CI: OWASP Dependency-Check, Trivy pe imagini; Gitleaks pentru secrete. |
+| A06 Vulnerable components | versiuni fixate în `pom.xml` (BOM-uri Spring), imagini oficiale; scanările automate (OWASP Dependency-Check, Trivy, Gitleaks) se pot adăuga în CI. |
 | A09 Logging & monitoring failures | audit append-only cu hash chain, metrici Prometheus, log-uri structurate (`LOG_FORMAT=ecs`). |
 
 ## Secrete
