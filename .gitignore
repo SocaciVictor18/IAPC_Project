@@ -1,0 +1,23 @@
+# Build
+target/
+*.class
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Secrets & local data
+.env
+infra/data/
+infra/keys/*.pem
+*.p12
+uploads/
+
+# Eval outputs
+eval/results/
+
+# Demo outputs
+gap-report-*.pdf
