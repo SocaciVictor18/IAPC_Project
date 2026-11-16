@@ -1,0 +1,166 @@
+server:
+  port: ${SERVER_PORT:9003}
+
+spring:
+  application:
+    name: compliance-service
+  threads:
+    virtual:
+      enabled: true
+  mvc:
+    async:
+      request-timeout: 180s
+    problemdetails:
+      enabled: true
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:edupulse}?currentSchema=compliance,public
+    username: ${COMPLIANCE_DB_USER:compliance_app}
+    password: ${COMPLIANCE_DB_PASSWORD:compliance_app_pw}
+    hikari:
+      maximum-pool-size: 30
+  flyway:
+    schemas: compliance
+    default-schema: compliance
+    create-schemas: false
+  ai:
+    model:
+      chat: ${CHAT_PROVIDER:openai}
+      embedding: ${EMBEDDING_PROVIDER:openai}
+      image: none
+      audio.speech: none
+      audio.transcription: none
+      moderation: none
+    openai:
+      api-key: ${OPENAI_API_KEY:not-set}
+      chat:
+        options:
+          model: ${OPENAI_CHAT_MODEL:gpt-4o}
+          temperature: 0.1
+      embedding:
+        model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:not-set}
+      chat:
+        options:
+          # Claude Opus 5.5 / Haiku 5.5 reject sampling parameters: no temperature is configured here.
+          model: ${ANTHROPIC_CHAT_MODEL:claude-opus-5-5}
+          max-tokens: 4096
+    ollama:
+      base-url: ${OLLAMA_URL:http://localhost:11434}
+      chat:
+        model: ${OLLAMA_CHAT_MODEL:llama3.2}
+        options:
+          temperature: 0.1
+      embedding:
+        model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text}
+      init:
+        pull-model-strategy: ${OLLAMA_PULL:when_missing}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+    registry-fetch-interval-seconds: 5
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+
+edupulse:
+  security:
+    jwks-uri: ${AUTH_JWKS_URI:http://localhost:9001/.well-known/jwks.json}
+  crypto:
+    data-key: ${DATA_ENCRYPTION_KEY}
+  service-client:
+    id: compliance-service
+    secret: ${SERVICE_CLIENT_SECRET}
+  gap:
+    max-requirements: ${GAP_MAX_REQUIREMENTS:30}
+    concurrency: ${GAP_CONCURRENCY:5}
+
+rag:
+  # Small deterministic model for expansion / classification / compression / gap analysis
+  # (gpt-4o-mini with OpenAI; with Ollama set UTILITY_MODEL=llama3.2).
+  utility-model: ${UTILITY_MODEL:gpt-4o-mini}
+  embedding-dimensions: ${EMBEDDING_DIMS:1536}
+  synonyms:
+    MFA: multi factor authentication
+    2FA: two factor authentication
+    SSO: single sign-on
+    DPO: data protection officer
+    PII: personally identifiable information
+    IR: incident response
+    AUP: acceptable use policy
+    SDLC: software development lifecycle
+    SIEM: security information and event management
+    BYOD: bring your own device
+    PTO: paid time off
+  query-expander:
+    enabled: true
+    number-of-queries: 3
+    include-original: true
+    cache-size: 500
+  hybrid:
+    semantic-top-k: 20
+    keyword-top-k: 20
+    rrf-k: 60
+    final-top-k: 20
+    similarity-threshold: 0.25
+  rerank:
+    provider: ${RERANK_PROVIDER:tei}       # tei | cohere | llm | none
+    url: ${RERANK_URL:http://localhost:8089}
+    api-key: ${COHERE_API_KEY:}
+    cohere-model: rerank-v3.5
+    candidates: 20
+    top-n: 8
+    timeout-ms: ${RERANK_TIMEOUT_MS:1500}
+  parent-context:
+    enabled: true
+  neighbor-stitch:
+    enabled: false
+    radius: 1
+  compression:
+    mode: ${COMPRESSION_MODE:extractive-embedding}   # extractive-embedding | llm | none
+    sentence-threshold: 0.35
+    min-chars: 200
+    max-sentences-per-document: 60
+  topic-boundary:
+    enabled: ${TOPIC_BOUNDARY_ENABLED:true}
+    accept-threshold: ${TOPIC_ACCEPT:0.45}
+    grey-zone-min: ${TOPIC_GREY_MIN:0.20}
+    refusal: "I can only answer questions about compliance, security and your organization's internal policies."
+  safeguard:
+    failure-response: "Your request was blocked by the safety policy. Please rephrase your compliance question."
+    sensitive-words:
+      - ignore previous instructions
+      - ignore all previous instructions
+      - ignore the above
+      - disregard your instructions
+      - reveal the system prompt
+      - show me your system prompt
+      - you are now
+      - act as dan
+      - jailbreak
+      - developer mode
+  input:
+    max-question-chars: 2000
+    history-turns: 3
+
+management:
+  endpoints.web.exposure.include: health,info,prometheus,metrics
+  endpoint.health.probes.enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        rag.ask.latency: true
+        rag.ttft: true
+        rag.retrieve.semantic: true
+        rag.retrieve.keyword: true
+        rag.rerank: true
+        rag.expand: true
+        rag.compress: true
+
+logging:
+  structured:
+    format:
+      console: ${LOG_FORMAT:}
