@@ -1,0 +1,74 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          httpclient:
+            connect-timeout: 3000
+            response-timeout: 180s
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowed-origin-patterns: ${CORS_ALLOWED_ORIGINS:http://localhost,http://localhost:*,http://127.0.0.1:*}
+                allowed-methods: [GET, POST, PATCH, PUT, DELETE, OPTIONS]
+                allowed-headers: ["*"]
+                exposed-headers: [Location, Retry-After, Content-Disposition]
+                allow-credentials: false
+          default-filters:
+            - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
+          routes:
+            - id: auth
+              uri: lb://auth-service
+              predicates:
+                - Path=/api/auth/**,/api/admin/**,/api/me,/.well-known/jwks.json
+            - id: ingestion
+              uri: lb://ingestion-service
+              predicates:
+                - Path=/api/documents,/api/documents/**
+              filters:
+                - name: RequestSize
+                  args:
+                    maxSize: ${MAX_UPLOAD_SIZE:200MB}
+            - id: compliance-read
+              uri: lb://compliance-service
+              predicates:
+                - Path=/api/compliance/**,/api/conversations,/api/conversations/**,/api/audit,/api/audit/**,/api/gap-analysis,/api/gap-analysis/**
+                - Method=GET
+              filters:
+                # Idempotent reads are retried on another instance when one goes down (failover demo).
+                - name: Retry
+                  args:
+                    retries: 2
+                    methods: GET
+                    series: SERVER_ERROR
+                    exceptions: java.io.IOException,java.net.ConnectException
+            - id: compliance-write
+              uri: lb://compliance-service
+              predicates:
+                - Path=/api/compliance/**,/api/conversations/**,/api/audit/**,/api/gap-analysis,/api/gap-analysis/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+    registry-fetch-interval-seconds: 5
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+
+edupulse:
+  security:
+    jwks-uri: ${AUTH_JWKS_URI:http://localhost:9001/.well-known/jwks.json}
+  rate-limit:
+    capacity: ${RATE_LIMIT_CAPACITY:120}
+    refill-per-second: ${RATE_LIMIT_REFILL:10}
+
+management:
+  endpoints.web.exposure.include: health,info,prometheus,gateway
+  endpoint.health.probes.enabled: true
