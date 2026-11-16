@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EduPulse AI</title>
+<style>
+  :root { --bg:#f6f7fb; --card:#fff; --ink:#1d2433; --muted:#667085; --line:#e4e7ec; --brand:#3b5bdb; --brand-ink:#fff;
+          --ok:#12b76a; --warn:#f79009; --bad:#f04438; --chip:#eef2ff; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1320; --card:#171c2b; --ink:#e6e9f2; --muted:#98a2b3; --line:#2a3145; --chip:#232b45; } }
+  * { box-sizing: border-box; }
+  body { margin:0; font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--bg); color: var(--ink); }
+  header { display:flex; align-items:center; gap:16px; padding:12px 20px; background: var(--card); border-bottom:1px solid var(--line); }
+  header h1 { font-size:18px; margin:0; } header .who { margin-left:auto; color: var(--muted); font-size:13px; }
+  nav { display:flex; gap:4px; padding: 8px 20px; flex-wrap: wrap; }
+  nav button { background:none; border:1px solid transparent; padding:6px 12px; border-radius:8px; cursor:pointer; color:var(--ink); font: inherit; }
+  nav button.active { background: var(--card); border-color: var(--line); font-weight:600; }
+  main { max-width: 1100px; margin: 0 auto; padding: 8px 20px 40px; }
+  .card { background: var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px; }
+  input, select, textarea { font: inherit; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background: var(--bg); color: var(--ink); }
+  textarea { width:100%; resize: vertical; }
+  button.primary { background: var(--brand); color: var(--brand-ink); border:0; padding:8px 14px; border-radius:8px; cursor:pointer; font: inherit; }
+  button.primary:disabled { opacity:.5; cursor: default; }
+  button.link { background:none; border:0; color: var(--brand); cursor:pointer; padding:0; font: inherit; }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap: wrap; }
+  .muted { color: var(--muted); } .small { font-size: 12px; }
+  table { width:100%; border-collapse: collapse; } th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); vertical-align: top; }
+  th { font-size:12px; color: var(--muted); font-weight:600; }
+  .chip { display:inline-block; padding:1px 8px; border-radius:999px; background: var(--chip); font-size:12px; }
+  .s-COVERED,.s-ANSWERED,.s-INDEXED{ background:#d1fadf; color:#05603a; } .s-PARTIAL,.s-NO_CONTEXT,.s-QUEUED,.s-EMBEDDING,.s-PARSING,.s-CHUNKING,.s-RUNNING{ background:#fef0c7; color:#93370d; }
+  .s-GAP,.s-FAILED,.s-ERROR,.s-BLOCKED_SAFEGUARD,.s-OUT_OF_SCOPE{ background:#fee4e2; color:#912018; }
+  .msg { padding:12px; border-radius:10px; margin:8px 0; white-space: pre-wrap; } .msg.q { background: var(--chip); } .msg.a { border:1px solid var(--line); }
+  .cite { border-left:3px solid var(--brand); padding:6px 10px; margin:6px 0; background: var(--bg); border-radius:6px; }
+  .cite b { font-size: 12px; } .err { color: var(--bad); }
+  .bar { height:6px; background: var(--line); border-radius:4px; overflow:hidden; width:120px; display:inline-block; vertical-align: middle; }
+  .bar > i { display:block; height:100%; background: var(--brand); }
+  .hidden { display:none; }
+  .login { max-width: 420px; margin: 60px auto; }
+  .stats { display:flex; gap:12px; flex-wrap: wrap; } .stat { padding:10px 14px; border:1px solid var(--line); border-radius:10px; min-width:110px; }
+  .stat b { font-size: 20px; display:block; }
+</style>
+</head>
+<body>
+<header><h1>EduPulse AI</h1><span class="muted small">Multi-tenant compliance &amp; audit assistant</span><span class="who" id="who"></span></header>
+
+<section id="loginView" class="card login">
+  <h2 style="margin-top:0">Sign in</h2>
+  <div class="row" style="flex-direction:column; align-items:stretch">
+    <select id="demoUser">
+      <option value="officer@acme.test">officer@acme.test – Compliance officer (Acme / SEC)</option>
+      <option value="admin@acme.test">admin@acme.test – Admin (Acme, org-wide)</option>
+      <option value="auditor@acme.test">auditor@acme.test – Auditor (Acme / SEC)</option>
+      <option value="employee@acme.test">employee@acme.test – Employee (Acme / SEC)</option>
+      <option value="officer.fin@acme.test">officer.fin@acme.test – Compliance officer (Acme / FIN)</option>
+      <option value="admin@helix.test">admin@helix.test – Admin (Helix Health)</option>
+    </select>
+    <input id="email" placeholder="e-mail" value="officer@acme.test">
+    <input id="password" type="password" placeholder="password" value="EduPulse#2026">
+    <button class="primary" id="loginBtn">Sign in</button>
+    <span id="loginErr" class="err small"></span>
+  </div>
+</section>
+
+<div id="app" class="hidden">
+  <nav id="tabs">
+    <button data-tab="ask" class="active">Ask</button>
+    <button data-tab="docs">Documents</button>
+    <button data-tab="gap">Gap analysis</button>
+    <button data-tab="audit">Audit log</button>
+    <button id="logout" style="margin-left:auto">Sign out</button>
+  </nav>
+  <main>
+    <section data-view="ask">
+      <div class="card">
+        <div id="chat"></div>
+        <textarea id="question" rows="3" placeholder="e.g. How should I handle MFA?  ·  Which frameworks does the company align with (ISO/IEC 27032)?"></textarea>
+        <div class="row" style="margin-top:8px">
+          <button class="primary" id="askBtn">Ask</button>
+          <label class="small"><input type="checkbox" id="fast"> fast mode</label>
+          <select id="askCategory" class="small"><option value="">all categories</option><option>INTERNAL_POLICY</option><option>REGULATION</option><option>AUDIT_REPORT</option></select>
+          <button class="link small" id="newConv">New conversation</button>
+          <span id="askInfo" class="muted small"></span>
+        </div>
+      </div>
+    </section>
+
+    <section data-view="docs" class="hidden">
+      <div class="card" id="uploadCard">
+        <h3 style="margin-top:0">Upload (PDF, DOCX, TXT)</h3>
+        <div class="row">
+          <input type="file" id="file" accept=".pdf,.docx,.txt">
+          <select id="category"><option>INTERNAL_POLICY</option><option>REGULATION</option><option>AUDIT_REPORT</option></select>
+          <input id="docType" placeholder="doc type (optional)" size="18">
+          <select id="clearance"><option value="1">clearance 1</option><option value="2">clearance 2</option><option value="3">clearance 3</option></select>
+          <button class="primary" id="uploadBtn">Upload</button>
+          <span id="uploadInfo" class="small muted"></span>
+        </div>
+      </div>
+      <div class="card"><div class="row"><h3 style="margin:0">Documents</h3><button class="link" id="refreshDocs">refresh</button></div><table id="docsTable"></table></div>
+    </section>
+
+    <section data-view="gap" class="hidden">
+      <div class="card" id="gapStartCard">
+        <h3 style="margin-top:0">New gap analysis</h3>
+        <div class="row"><select id="regulation"></select><button class="primary" id="gapBtn">Analyse against internal policies</button><span id="gapInfo" class="small muted"></span></div>
+      </div>
+      <div class="card"><div class="row"><h3 style="margin:0">Reports</h3><button class="link" id="refreshGap">refresh</button></div><table id="gapTable"></table></div>
+      <div class="card hidden" id="gapDetail"></div>
+    </section>
+
+    <section data-view="audit" class="hidden">
+      <div class="card"><div class="row"><h3 style="margin:0">Audit log</h3><button class="link" id="refreshAudit">refresh</button>
+        <button class="link" id="verifyChain">verify hash chain</button><button class="link" id="exportAudit">export CSV</button><span id="chainInfo" class="small"></span></div>
+        <table id="auditTable"></table></div>
+      <div class="card hidden" id="auditDetail"></div>
+    </section>
+  </main>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let token = null, me = null, conversationId = null;
+try { token = sessionStorage.getItem('ep_token'); } catch (e) {}
+
+async function api(path, opts = {}) {
+  const headers = Object.assign({}, opts.headers || {}, token ? { Authorization: 'Bearer ' + token } : {});
+  if (opts.json !== undefined) { headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(opts.json); }
+  const res = await fetch(path, Object.assign({}, opts, { headers }));
+  if (res.status === 401 && token) { logout(); throw new Error('Session expired, please sign in again'); }
+  if (!res.ok) { let d = ''; try { const j = await res.json(); d = j.detail || j.title || JSON.stringify(j); } catch (e) { d = res.statusText; } throw new Error(res.status + ': ' + d); }
+  const ct = res.headers.get('content-type') || '';
+  return ct.includes('json') ? res.json() : res;
+}
+const hasRole = (...r) => me && r.some(x => me.roles.includes('ROLE_' + x));
+
+$('#demoUser').onchange = e => { $('#email').value = e.target.value; };
+$('#loginBtn').onclick = async () => {
+  $('#loginErr').textContent = '';
+  try {
+    const t = await api('/api/auth/login', { method: 'POST', json: { email: $('#email').value, password: $('#password').value } });
+    token = t.accessToken; try { sessionStorage.setItem('ep_token', token); } catch (e) {}
+    await start();
+  } catch (e) { $('#loginErr').textContent = e.message; }
+};
+$('#logout').onclick = () => logout();
+function logout() { token = null; me = null; try { sessionStorage.removeItem('ep_token'); } catch (e) {} $('#app').classList.add('hidden'); $('#loginView').classList.remove('hidden'); $('#who').textContent = ''; }
+
+async function start() {
+  me = await api('/api/me');
+  $('#who').textContent = `${me.email} · ${me.organizationName} / ${me.orgUnitCode} · clearance ${me.clearanceLevel} · ${me.roles.map(r => r.replace('ROLE_', '')).join(', ')}`;
+  $('#loginView').classList.add('hidden'); $('#app').classList.remove('hidden');
+  $('#uploadCard').classList.toggle('hidden', !hasRole('ADMIN', 'COMPLIANCE_OFFICER'));
+  $('#gapStartCard').classList.toggle('hidden', !hasRole('ADMIN', 'COMPLIANCE_OFFICER'));
+  document.querySelector('[data-tab=gap]').classList.toggle('hidden', !hasRole('ADMIN', 'COMPLIANCE_OFFICER', 'AUDITOR'));
+}
+
+document.querySelectorAll('#tabs [data-tab]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#tabs [data-tab]').forEach(x => x.classList.toggle('active', x === b));
+  document.querySelectorAll('[data-view]').forEach(v => v.classList.toggle('hidden', v.dataset.view !== b.dataset.tab));
+  ({ docs: loadDocs, gap: loadGap, audit: loadAudit })[b.dataset.tab]?.();
+});
+
+// ---------------- Ask (SSE over fetch)
+$('#newConv').onclick = () => { conversationId = null; $('#chat').innerHTML = ''; $('#askInfo').textContent = 'new conversation'; };
+$('#askBtn').onclick = ask;
+$('#question').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) ask(); });
+async function ask() {
+  const q = $('#question').value.trim(); if (!q) return;
+  $('#askBtn').disabled = true; $('#question').value = '';
+  $('#chat').insertAdjacentHTML('beforeend', `<div class="msg q">${esc(q)}</div>`);
+  const a = document.createElement('div'); a.className = 'msg a'; a.textContent = '…'; $('#chat').appendChild(a);
+  const cites = document.createElement('div'); $('#chat').appendChild(cites);
+  const body = { question: q, conversationId, mode: $('#fast').checked ? 'FAST' : 'FULL' };
+  if ($('#askCategory').value) body.filters = { category: $('#askCategory').value };
+  const t0 = performance.now(); let first = null, text = '';
+  try {
+    const res = await fetch('/api/compliance/ask/stream', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token, Accept: 'text/event-stream' }, body: JSON.stringify(body) });
+    if (!res.ok) throw new Error(res.status + ' ' + (await res.text()));
+    const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = '';
+    for (;;) {
+      const { value, done } = await reader.read(); if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i; while ((i = buf.indexOf('\n\n')) >= 0) {
+        const raw = buf.slice(0, i); buf = buf.slice(i + 2);
+        let ev = 'message', data = '';
+        raw.split('\n').forEach(l => { if (l.startsWith('event:')) ev = l.slice(6).trim(); else if (l.startsWith('data:')) data += l.slice(5).trimStart(); });
+        if (!data) continue; const d = JSON.parse(data);
+        if (ev === 'meta') conversationId = d.conversationId;
+        if (ev === 'token') { if (first === null) first = performance.now() - t0; text += d.text; a.textContent = text; }
+        if (ev === 'citations') cites.innerHTML = renderCitations(d);
+        if (ev === 'done') { $('#askInfo').innerHTML = `<span class="chip s-${d.outcome}">${d.outcome}</span> ${d.ungrounded ? '<span class="chip s-GAP">ungrounded</span>' : ''} first token ${Math.round(first ?? 0)} ms · total ${d.latencyMs} ms · ${d.retrieval?.expandedQueries?.length || 0} queries`; }
+        if (ev === 'error') throw new Error(d.message);
+      }
+    }
+  } catch (e) { a.innerHTML = `<span class="err">${esc(e.message)}</span>`; }
+  $('#askBtn').disabled = false;
+}
+function renderCitations(list) {
+  if (!list || !list.length) return '';
+  return '<div class="small muted">Sources</div>' + list.map(c => `<div class="cite"><b>[${esc(c.label)}] ${esc(c.documentName)}${c.page ? ', page ' + c.page : c.section ? ', ' + esc(c.section) : ''}</b>
+    <span class="chip">${esc(c.match || '')}</span> ${c.rerankScore != null ? `<span class="chip">rerank ${c.rerankScore.toFixed(2)}</span>` : ''} ${c.cited ? '' : '<span class="chip">context only</span>'}
+    <div class="small">“${esc(c.snippet)}”</div></div>`).join('');
+}
+
+// ---------------- Documents
+$('#refreshDocs').onclick = loadDocs;
+async function loadDocs() {
+  const page = await api('/api/documents?size=200');
+  const canEdit = hasRole('ADMIN', 'COMPLIANCE_OFFICER');
+  $('#docsTable').innerHTML = '<tr><th>Title</th><th>Category</th><th>Status</th><th>Pages / chunks</th><th>Clr</th><th>Uploaded</th><th></th></tr>' +
+    page.items.map(d => `<tr><td>${esc(d.title)}<div class="small muted">${esc(d.filename)} · v${d.version}</div></td><td>${esc(d.category)}${d.docType ? '<div class="small muted">' + esc(d.docType) + '</div>' : ''}</td>
+      <td><span class="chip s-${d.status}">${d.status}</span> ${d.status !== 'INDEXED' && d.status !== 'FAILED' ? `<span class="bar"><i style="width:${d.progressPct}%"></i></span>` : ''}${d.error ? `<div class="small err">${esc(d.error)}</div>` : ''}</td>
+      <td>${d.pageCount ?? '–'} / ${d.chunkCount ?? '–'}</td><td>${d.clearanceLevel}</td><td class="small">${new Date(d.uploadedAt).toLocaleString()}</td>
+      <td>${canEdit ? `<button class="link small" onclick="reindex('${d.id}')">reindex</button> <button class="link small" onclick="delDoc('${d.id}')">delete</button>` : ''}</td></tr>`).join('');
+  if (page.items.some(d => !['INDEXED', 'FAILED'].includes(d.status))) setTimeout(loadDocs, 3000);
+}
+window.reindex = async id => { try { await api(`/api/documents/${id}/reindex`, { method: 'POST' }); loadDocs(); } catch (e) { alert(e.message); } };
+window.delDoc = async id => { if (!confirm('Delete this document and its vectors?')) return; try { await api(`/api/documents/${id}`, { method: 'DELETE' }); loadDocs(); } catch (e) { alert(e.message); } };
+$('#uploadBtn').onclick = async () => {
+  const f = $('#file').files[0]; if (!f) return;
+  const fd = new FormData(); fd.append('file', f);
+  const qs = new URLSearchParams({ category: $('#category').value, clearanceLevel: $('#clearance').value });
+  if ($('#docType').value) qs.set('docType', $('#docType').value);
+  $('#uploadInfo').textContent = 'uploading…'; $('#uploadBtn').disabled = true;
+  try { const r = await api('/api/documents?' + qs, { method: 'POST', body: fd });
+        $('#uploadInfo').textContent = r.async ? 'queued for background ingestion (> 10 MB)' : 'status: ' + r.document.status; loadDocs(); }
+  catch (e) { $('#uploadInfo').innerHTML = `<span class="err">${esc(e.message)}</span>`; }
+  $('#uploadBtn').disabled = false;
+};
+
+// ---------------- Gap analysis
+$('#refreshGap').onclick = loadGap;
+async function loadGap() {
+  if (hasRole('ADMIN', 'COMPLIANCE_OFFICER')) {
+    const regs = await api('/api/documents?category=REGULATION&size=200');
+    $('#regulation').innerHTML = regs.items.filter(d => d.status === 'INDEXED').map(d => `<option value="${d.id}">${esc(d.title)}</option>`).join('') || '<option value="">upload and index a REGULATION document first</option>';
+  }
+  const reports = await api('/api/gap-analysis');
+  $('#gapTable').innerHTML = '<tr><th>Regulation</th><th>Status</th><th>Covered / partial / gap / n.a.</th><th>Requested</th><th></th></tr>' +
+    reports.map(r => `<tr><td>${esc(r.regulation_title)}</td><td><span class="chip s-${r.status}">${r.status}</span> ${r.status === 'RUNNING' || r.status === 'QUEUED' ? `<span class="bar"><i style="width:${r.progress_pct}%"></i></span>` : ''}</td>
+      <td>${r.covered ?? '–'} / ${r.partial ?? '–'} / ${r.gaps ?? '–'} / ${r.not_applicable ?? '–'}</td><td class="small">${esc(r.requested_by_email)}<br>${new Date(r.created_at).toLocaleString()}</td>
+      <td>${r.status === 'COMPLETED' ? `<button class="link small" onclick="gapDetail('${r.id}')">view</button>` : ''}</td></tr>`).join('');
+  if (reports.some(r => r.status === 'RUNNING' || r.status === 'QUEUED')) setTimeout(loadGap, 3000);
+}
+$('#gapBtn').onclick = async () => {
+  const id = $('#regulation').value; if (!id) return;
+  try { await api('/api/gap-analysis', { method: 'POST', json: { regulationDocumentId: id } }); $('#gapInfo').textContent = 'started'; loadGap(); }
+  catch (e) { $('#gapInfo').innerHTML = `<span class="err">${esc(e.message)}</span>`; }
+};
+window.gapDetail = async id => {
+  const [r, f] = await Promise.all([api('/api/gap-analysis/' + id), api(`/api/gap-analysis/${id}/findings`)]);
+  const el = $('#gapDetail'); el.classList.remove('hidden');
+  el.innerHTML = `<h3 style="margin-top:0">${esc(r.regulation_title)}</h3>
+    <div class="stats"><div class="stat"><b>${r.total_requirements}</b>requirements</div><div class="stat"><b>${r.covered}</b>covered</div><div class="stat"><b>${r.partial}</b>partial</div><div class="stat"><b>${r.gaps}</b>gaps</div></div>
+    <p>${esc(r.summary)}</p>
+    <div class="row">Export: ${['pdf', 'docx', 'csv', 'json'].map(x => `<button class="link" onclick="download('/api/gap-analysis/${id}/export?format=${x}','gap-report-${id}.${x}')">${x.toUpperCase()}</button>`).join(' · ')}</div>
+    <table><tr><th>#</th><th>Requirement</th><th>Status</th><th>Rationale / recommendation</th><th>Evidence</th></tr>
+    ${f.map(x => `<tr><td>${x.ordinal}</td><td>${esc(x.requirementRef ? x.requirementRef + ': ' : '')}${esc(x.requirementText)}<div class="small muted">page ${x.requirementPage ?? '?'} · ${x.obligationType}</div></td>
+      <td><span class="chip s-${x.status}">${x.status}</span><div class="small">${esc(x.severity || '')}</div></td><td class="small">${esc(x.rationale)}${x.recommendation ? '<br>→ ' + esc(x.recommendation) : ''}</td>
+      <td class="small">${(x.evidence || []).map(e => `<div class="cite"><b>${esc(e.source)}${e.page ? ', p. ' + e.page : ''}</b><div>“${esc(e.snippet)}”</div></div>`).join('')}</td></tr>`).join('')}</table>`;
+  el.scrollIntoView({ behavior: 'smooth' });
+};
+window.download = async (url, name) => {
+  try { const res = await api(url); const blob = await res.blob(); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); URL.revokeObjectURL(a.href); }
+  catch (e) { alert(e.message); }
+};
+
+// ---------------- Audit
+$('#refreshAudit').onclick = loadAudit;
+$('#exportAudit').onclick = () => download('/api/audit/export', 'audit-log.csv');
+$('#verifyChain').onclick = async () => { try { const v = await api('/api/audit/verify'); $('#chainInfo').innerHTML = v.valid ? `<span class="chip s-COVERED">chain intact · ${v.rowsChecked} rows</span>` : `<span class="chip s-GAP">broken at ${v.firstBrokenId}</span>`; } catch (e) { $('#chainInfo').innerHTML = `<span class="err">${esc(e.message)}</span>`; } };
+async function loadAudit() {
+  const page = await api('/api/audit?size=100');
+  $('#auditTable').innerHTML = '<tr><th>When</th><th>User</th><th>Question</th><th>Outcome</th><th>Latency</th><th></th></tr>' +
+    page.items.map(r => `<tr><td class="small">${new Date(r.created_at).toLocaleString()}</td><td class="small">${esc(r.user_email)}</td><td>${esc(r.question)}</td>
+      <td><span class="chip s-${r.outcome}">${r.outcome}</span></td><td class="small">${r.latency_ms} ms${r.ttft_ms ? '<br>ttft ' + r.ttft_ms + ' ms' : ''}</td>
+      <td><button class="link small" onclick="auditDetail('${r.id}')">chunks</button></td></tr>`).join('');
+}
+window.auditDetail = async id => {
+  const d = await api('/api/audit/' + id); const el = $('#auditDetail'); el.classList.remove('hidden');
+  el.innerHTML = `<h3 style="margin-top:0">Audit record</h3><div class="small muted">transformed: ${esc(d.transformed_query)} · filter: ${esc(d.applied_filter)}</div>
+    <div class="small">expanded queries: ${(d.expanded_queries || []).map(esc).join(' | ')}</div><div class="msg a">${esc(d.answer)}</div>
+    <table><tr><th>#</th><th>Label</th><th>Source</th><th>Scores</th><th>Snippet</th></tr>${(d.chunks || []).map(c => `<tr><td>${c.rank}</td><td>${esc(c.label)} ${c.cited ? '✓' : ''}</td>
+    <td class="small">${esc(c.source)}${c.page_number ? ', p. ' + c.page_number : ''}</td><td class="small">${c.match || ''}<br>rrf ${c.retrieval_score?.toFixed?.(4) ?? '–'} · rerank ${c.rerank_score?.toFixed?.(2) ?? '–'}</td><td class="small">${esc(c.snippet)}</td></tr>`).join('')}</table>`;
+  el.scrollIntoView({ behavior: 'smooth' });
+};
+
+if (token) start().catch(() => logout());
+</script>
+</body>
+</html>

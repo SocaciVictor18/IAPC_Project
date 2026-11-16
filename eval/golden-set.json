@@ -1,0 +1,31 @@
+{
+  "description": "Golden questions over the 6 EAAlgorithm Internal Security Handbook PDFs. expectedSource/expectedPage are used for Hit@k, MRR and citation precision; mustContain is a loose answer check.",
+  "user": "employee@acme.test",
+  "questions": [
+    {"id": "q01", "question": "How should I handle MFA?", "expectedSource": "authentication_datahandling.pdf", "expectedPage": 1, "mustContain": ["mandatory"]},
+    {"id": "q02", "question": "What is the minimum password length?", "expectedSource": "authentication_datahandling.pdf", "expectedPage": 1, "mustContain": ["12"]},
+    {"id": "q03", "question": "Which password managers are approved?", "expectedSource": "authentication_datahandling.pdf", "expectedPage": 1, "mustContain": ["Bitwarden"]},
+    {"id": "q04", "question": "After how many minutes do idle sessions log out?", "expectedSource": "authentication_datahandling.pdf", "expectedPage": 2, "mustContain": ["15"]},
+    {"id": "q05", "question": "Are shared accounts allowed?", "expectedSource": "authentication_datahandling.pdf", "expectedPage": 1, "mustContain": ["prohibited"]},
+    {"id": "q06", "question": "How must restricted data be stored?", "expectedSource": "authentication_datahandling.pdf", "expectedPage": 3, "mustContain": ["vault"]},
+    {"id": "q07", "question": "Which encryption is required for confidential data at rest and in transit?", "expectedSource": "authentication_datahandling.pdf", "expectedPage": 3, "mustContain": ["AES-256"]},
+    {"id": "q08", "question": "Which frameworks does the company align with (ISO/IEC 27032)?", "expectedSource": "compliance_responsibilities.pdf", "expectedPage": 1, "mustContain": ["NIST"]},
+    {"id": "q09", "question": "What are the five functions of the NIST CSF?", "expectedSource": "compliance_responsibilities.pdf", "expectedPage": 1, "mustContain": ["Recover"]},
+    {"id": "q10", "question": "How is SOC 2 implemented at EAAlgorithm?", "expectedSource": "compliance_responsibilities.pdf", "expectedPage": 2, "mustContain": ["weekly"]},
+    {"id": "q11", "question": "Within how much time must a lost laptop be reported?", "expectedSource": "compliance_responsibilities.pdf", "expectedPage": 3, "mustContain": ["1 hour"]},
+    {"id": "q12", "question": "Who must approve exporting non-anonymized customer data for analytics?", "expectedSource": "compliance_responsibilities.pdf", "expectedPage": 3, "mustContain": ["DPO"]},
+    {"id": "q13", "question": "What should I do with a suspicious email asking for my credentials?", "expectedSource": "compliance_responsibilities.pdf", "expectedPage": 3, "mustContain": ["security-alerts"]},
+    {"id": "q14", "question": "Can I install browser extensions on my company laptop?", "expectedSource": "policy_incidentmanagement.pdf", "expectedPage": 1, "mustContain": ["unapproved"]},
+    {"id": "q15", "question": "How do I report a security incident?", "expectedSource": "policy_incidentmanagement.pdf", "expectedPage": 3, "mustContain": ["security-alerts"]},
+    {"id": "q16", "question": "What are the phases of the incident response lifecycle?", "expectedSource": "policy_incidentmanagement.pdf", "expectedPage": 3, "mustContain": ["Containment"]},
+    {"id": "q17", "question": "What is the role of executives during incident response?", "expectedSource": "policy_incidentmanagement.pdf", "expectedPage": 4, "mustContain": ["externally"]},
+    {"id": "q18", "question": "What is the purpose of the security handbook?", "expectedSource": "scope_roles.pdf", "expectedPage": 1, "mustContain": ["confidentiality"]},
+    {"id": "q19", "question": "Does the handbook apply to BYOD devices?", "expectedSource": "scope_roles.pdf", "expectedPage": 1, "mustContain": ["BYOD"]},
+    {"id": "q20", "question": "What are the responsibilities of developers?", "expectedSource": "scope_roles.pdf", "expectedPage": 3, "mustContain": ["OWASP"]},
+    {"id": "q21", "question": "Which threat modeling methodology is used?", "expectedSource": "secure_development.pdf", "expectedPage": 2, "mustContain": ["STRIDE"]},
+    {"id": "q22", "question": "Where must secrets be stored instead of hardcoding them?", "expectedSource": "secure_development.pdf", "expectedPage": 1, "mustContain": ["Vault"]},
+    {"id": "q23", "question": "Which security checks run in the CI/CD pipeline?", "expectedSource": "secure_development.pdf", "expectedPage": 4, "mustContain": ["SAST"]},
+    {"id": "q24", "question": "How often are the security policies formally reviewed?", "expectedSource": "updatecycle_checklist.pdf", "expectedPage": 1, "mustContain": ["Quarterly"]},
+    {"id": "q25", "question": "Who approves policy changes?", "expectedSource": "updatecycle_checklist.pdf", "expectedPage": 1, "mustContain": ["Executive"]}
+  ]
+}

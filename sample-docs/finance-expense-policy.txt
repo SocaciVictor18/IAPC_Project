@@ -1,0 +1,18 @@
+FINANCE OPERATIONS - EXPENSE APPROVAL POLICY
+Owner: Finance Operations (FIN) - Confidential
+
+1. Approval thresholds
+Expenses up to 500 EUR are approved by the team lead.
+Expenses between 500 EUR and 5,000 EUR require approval by the Finance Operations manager.
+Expenses above 5,000 EUR require written approval by the Chief Financial Officer (CFO).
+
+2. Corporate cards
+Corporate cards may only be used for business expenses. Receipts must be uploaded within 10 working days.
+Lost corporate cards must be blocked through the bank portal immediately and reported to Finance Operations.
+
+3. Segregation of duties
+The person who requests a payment may never be the person who approves it.
+Vendor bank account changes must be verified by a call-back to a known phone number before payment.
+
+4. Audit
+Finance Operations reviews a random sample of 5% of expense reports every month.

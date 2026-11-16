@@ -1,0 +1,22 @@
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+scrape_configs:
+  # Every service instance registered in Eureka is discovered automatically (also after --scale).
+  - job_name: edupulse-services
+    metrics_path: /actuator/prometheus
+    eureka_sd_configs:
+      - server: http://eureka-1:8761/eureka
+        refresh_interval: 15s
+    relabel_configs:
+      - source_labels: [__meta_eureka_app_name]
+        target_label: application
+        action: replace
+      - source_labels: [__meta_eureka_app_instance_id]
+        target_label: instance
+
+  - job_name: eureka
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["eureka-1:8761", "eureka-2:8762"]
