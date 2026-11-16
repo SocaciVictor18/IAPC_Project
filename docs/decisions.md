@@ -5,7 +5,7 @@
 | ADR-001 | **Spring Boot 4.1 + Spring AI 2.0.2 + Spring Cloud 2025.1** (nu Boot 3.x) | Spring AI 2.0 e construit pe Boot 4 / Framework 7 și nu pornește pe Boot 3.x; Boot 3.5 a ieșit din suport OSS (30.06.2026). Cerința mai specifică („Spring AI 2.0+”) câștigă. API-ul RAG e aproape identic pe Spring AI 1.1 + Boot 3.5 dacă profesorul cere explicit Boot 3. |
 | ADR-002 | **pgvector**, nu Qdrant | Cerința proiectului cere explicit PostgreSQL + pgvector, iar hybrid search-ul folosește `tsvector` din aceeași bază (fuziune în SQL, aceeași tranzacție, același filtru de tenant). |
 | ADR-003 | O instanță Postgres, **o schemă + un utilizator per serviciu** | Suficient pentru proiect; fiecare serviciu deține doar schema lui. Compromis documentat: compliance are `SELECT` pe tabela vectorială și pe părinți (retrieval-ul citește direct, fără hop de rețea). |
-| ADR-004 | Componente custom unde Spring AI nu are echivalent | Hybrid search (`DocumentRetriever`), reranker (`DocumentPostProcessor`), compresie de context (`DocumentPostProcessor` – `CompressionQueryTransformer` comprimă *istoricul*, nu contextul), `TopicBoundaryAdvisor`, chunking parent-child. |
+| ADR-004 | Componente custom unde Spring AI nu are echivalent | Hybrid search (`DocumentRetriever`), reranker (`DocumentPostProcessor`), compresie de context (`DocumentPostProcessor` – `CompressionQueryTransformer` din Spring AI rescrie întrebările de follow-up din *istoric*, nu comprimă contextul, deci nu e folosit), `TopicBoundaryAdvisor`, chunking parent-child. |
 | ADR-005 | **Citații deterministe** | Lista `citations[]` se construiește din documentele chiar trimise LLM-ului (`DOCUMENT_CONTEXT`), nu din textul generat („Naive Citation problem” din curs). Headerele `[S#] [Source, Page]` ajută LLM-ul să citeze corect. |
 | ADR-006 | Gateway reactiv, servicii Spring MVC + **virtual threads** | WebFlux pentru multe conexiuni/SSE la margine; în servicii cod imperativ simplu cu `spring.threads.virtual.enabled=true`, `ReentrantLock` în loc de `synchronized` pe I/O. |
 | ADR-007 | **JobRunr** pentru ingestia asincronă | Joburi persistente în Postgres, retry, dashboard; orice replică a ingestion-service preia joburi din coadă (scale-out). |
@@ -24,4 +24,3 @@
 * `QueryBuilder` nu există → `query.mutate().text(...)` (păstrează istoricul și contextul – esențial pentru tenant);
 * `.withTemperature()/.withNumberOfQueries()` → `.temperature()/.numberOfQueries()`; `defaultOptions(...)` primește un `ChatOptions.Builder`;
 * tabela vectorială e creată de Flyway (`initializeSchema=false`) pentru coloana `content_tsv`;
-* `NeighborStitchPostProcessor` caută vecinii prin SQL exact pe `document_id + chunk_index`, nu printr-un `similaritySearch` fără text.

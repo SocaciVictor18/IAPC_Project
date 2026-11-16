@@ -31,7 +31,7 @@ import java.util.regex.Pattern;
  *   <li>{@code none}: pass-through (for the evaluation comparison).</li>
  * </ul>
  * Spring AI's {@code CompressionQueryTransformer} does something else (it compresses conversation
- * history into a standalone query) and is used for follow-ups.
+ * history into a standalone query), which is not what the requirement asks for, so it is not used.
  */
 @Slf4j
 @Component

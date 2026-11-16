@@ -116,9 +116,6 @@ rag:
     timeout-ms: ${RERANK_TIMEOUT_MS:1500}
   parent-context:
     enabled: true
-  neighbor-stitch:
-    enabled: false
-    radius: 1
   compression:
     mode: ${COMPRESSION_MODE:extractive-embedding}   # extractive-embedding | llm | none
     sentence-threshold: 0.35

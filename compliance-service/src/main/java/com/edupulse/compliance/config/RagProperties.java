@@ -8,7 +8,7 @@ import java.util.Map;
 
 /**
  * All tunables of the Advanced RAG pipeline ({@code rag.*}). Evolved from the course's
- * {@code RagConfigData} (synonyms, radius, query expander) with the new hybrid / rerank /
+ * {@code RagConfigData} (synonyms, query expander) with the new hybrid / rerank /
  * compression / guardrail settings.
  */
 @ConfigurationProperties("rag")
@@ -21,7 +21,6 @@ public record RagProperties(
         Hybrid hybrid,
         Rerank rerank,
         ParentContext parentContext,
-        NeighborStitch neighborStitch,
         Compression compression,
         TopicBoundary topicBoundary,
         Safeguard safeguard,
@@ -43,9 +42,6 @@ public record RagProperties(
     }
 
     public record ParentContext(boolean enabled) {
-    }
-
-    public record NeighborStitch(boolean enabled, int radius) {
     }
 
     /** mode: extractive-embedding | llm | none */

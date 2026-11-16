@@ -29,7 +29,7 @@ class RagComponentsTest {
         synonyms.put("MFA", "multi factor authentication");
         synonyms.put("SSO", "single sign-on");
         synonyms.put("PTO", "paid time off");
-        return new RagProperties("m", 1536, synonyms, null, null, null, null, null, null, null, null, null);
+        return new RagProperties("m", 1536, synonyms, null, null, null, null, null, null, null, null);
     }
 
     private static TenantContext tenant(String role) {

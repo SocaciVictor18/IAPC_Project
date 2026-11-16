@@ -59,8 +59,7 @@ POST /api/documents (ADMIN / COMPLIANCE_OFFICER)
 SafeGuardAdvisor (order -200)        blochează prompt injection (listă configurabilă, case-insensitive)
 TopicBoundaryAdvisor (order -100)    embedding vs. 25 de topicuri; zona gri → LLM structured output; altfel refuz
 RetrievalAugmentationAdvisor (0)
-  PRE   FollowUpCompressionTransformer   doar dacă există istoric: follow-up → întrebare standalone (CompressionQueryTransformer)
-        DomainSynonymTransformer         din curs: curăță „please / can you / ?”, MFA → multi factor authentication …
+  PRE   DomainSynonymTransformer         din curs: curăță „please / can you / ?”, MFA → multi factor authentication …
         MultiQueryExpander               3 variante + originalul (template-ul din curs), cache pe text
   RET   HybridDocumentRetriever          pe fiecare interogare, în paralel (virtual threads):
           ├─ pgvector top-20 (cosine, HNSW) + filtru tenant (Filter.Expression)
@@ -68,7 +67,6 @@ RetrievalAugmentationAdvisor (0)
           → RRF k=60 → top-20
         RrfDocumentJoiner                al doilea nivel RRF peste variantele de interogare
   POST  CrossEncoderRerankPostProcessor  top-20 → top-8 (TEI bge-reranker-base; fallback la ordinea RRF, timeout 1.5 s)
-        [NeighborStitchPostProcessor]    din curs, dezactivat implicit (parent-child rezolvă aceeași problemă)
         ParentContextPostProcessor       copil → textul părintelui (decriptat), dedup pe parent_id
         ContextCompressionPostProcessor  extractiv: doar propozițiile relevante (embedding), text verbatim
         CitationHeaderPostProcessor      „[S1] [Source: X, Page: N]” + eticheta în metadata
@@ -76,7 +74,12 @@ RetrievalAugmentationAdvisor (0)
 ```
 
 Contextul de tenant circulă prin `advisors(a -> a.param(...))` → `Query.context()`; `MultiQueryExpander` și
-`CompressionQueryTransformer` păstrează contextul (`query.mutate()`), iar retriever-ul **refuză** să caute fără tenant.
+`DomainSynonymTransformer` păstrează contextul (`query.mutate()`), iar retriever-ul **refuză** să caute fără tenant.
+
+Compresia de context cerută în enunț (doar propozițiile relevante, ca să scadă tokenii) o face
+`ContextCompressionPostProcessor`. Clasa Spring AI `CompressionQueryTransformer`, deși are nume asemănător, face altceva:
+rescrie o întrebare de follow-up într-una de sine stătătoare, folosind istoricul conversației – de aceea nu e folosită.
+În conversații, ultimele schimburi sunt totuși trimise LLM-ului ca istoric.
 
 Răspunsul API conține `citations[]` construite din `RetrievalAugmentationAdvisor.DOCUMENT_CONTEXT` (documentele chiar
 trimise LLM-ului), filtrate pe etichetele `[S#]` care apar în text. Dacă LLM-ul nu citează nimic, răspunsul e marcat `ungrounded`.

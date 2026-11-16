@@ -84,7 +84,7 @@ class HybridRetrievalIntegrationTest {
         RagProperties props = new RagProperties("m", DIMS, synonyms, null,
                 new RagProperties.Hybrid(20, 20, 60, 20, 0.0),
                 new RagProperties.Rerank("none", null, null, null, 20, 8, 800),
-                null, null, null, null, null, null);
+                null, null, null, null, null);
         retriever = new HybridDocumentRetriever(store, JdbcClient.create(ds), new TenantFilterProvider(), props, new SimpleMeterRegistry());
     }
 

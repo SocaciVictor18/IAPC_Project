@@ -4,10 +4,8 @@ import com.edupulse.compliance.rag.guardrails.TopicBoundaryAdvisor;
 import com.edupulse.compliance.rag.postprocessing.CitationHeaderPostProcessor;
 import com.edupulse.compliance.rag.postprocessing.ContextCompressionPostProcessor;
 import com.edupulse.compliance.rag.postprocessing.CrossEncoderRerankPostProcessor;
-import com.edupulse.compliance.rag.postprocessing.NeighborStitchPostProcessor;
 import com.edupulse.compliance.rag.postprocessing.ParentContextPostProcessor;
 import com.edupulse.compliance.rag.preprocessing.DomainSynonymTransformer;
-import com.edupulse.compliance.rag.preprocessing.FollowUpCompressionTransformer;
 import com.edupulse.compliance.rag.preprocessing.TracingQueryExpander;
 import com.edupulse.compliance.rag.retrieval.HybridDocumentRetriever;
 import com.edupulse.compliance.rag.retrieval.RrfDocumentJoiner;
@@ -23,7 +21,6 @@ import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugmenter;
 import org.springframework.ai.rag.postretrieval.document.DocumentPostProcessor;
 import org.springframework.ai.rag.preretrieval.query.expansion.MultiQueryExpander;
-import org.springframework.ai.rag.preretrieval.query.transformation.CompressionQueryTransformer;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.pgvector.PgVectorStore;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -44,9 +41,9 @@ import java.util.stream.Collectors;
  * course's {@code @Primary} delegate bean, so the same code runs on OpenAI or Ollama.
  * <pre>
  * SafeGuardAdvisor → TopicBoundaryAdvisor → RetrievalAugmentationAdvisor
- *   pre:   FollowUpCompression (only with history) → DomainSynonymTransformer → MultiQueryExpander (3 + original)
+ *   pre:   DomainSynonymTransformer → MultiQueryExpander (3 + original)
  *   ret.:  HybridDocumentRetriever (pgvector + tsvector, RRF, tenant filter) per query, in parallel → RRF joiner
- *   post:  CrossEncoderRerank (top 20 → 8) → [NeighborStitch] → ParentContext → ContextCompression → CitationHeader
+ *   post:  CrossEncoderRerank (top 20 → 8) → ParentContext → ContextCompression → CitationHeader
  *   gen.:  ContextualQueryAugmenter(allowEmptyContext=false)
  * </pre>
  */
@@ -90,7 +87,6 @@ public class AiConfig {
                                             DomainSynonymTransformer synonyms,
                                             @Qualifier("utilityChatClientBuilder") ChatClient.Builder utility,
                                             CrossEncoderRerankPostProcessor rerank,
-                                            NeighborStitchPostProcessor neighbors,
                                             ParentContextPostProcessor parent,
                                             ContextCompressionPostProcessor compress,
                                             CitationHeaderPostProcessor cite,
@@ -102,9 +98,6 @@ public class AiConfig {
 
         List<DocumentPostProcessor> post = new ArrayList<>();
         post.add(rerank);
-        if (props.neighborStitch().enabled()) {
-            post.add(neighbors);
-        }
         if (props.parentContext().enabled()) {
             post.add(parent);
         }
@@ -112,9 +105,7 @@ public class AiConfig {
         post.add(cite);
 
         RetrievalAugmentationAdvisor.Builder builder = RetrievalAugmentationAdvisor.builder()
-                .queryTransformers(
-                        new FollowUpCompressionTransformer(CompressionQueryTransformer.builder().chatClientBuilder(utility.clone()).build()),
-                        synonyms)
+                .queryTransformers(synonyms)
                 .documentRetriever(retriever)
                 .documentJoiner(new RrfDocumentJoiner(props))
                 .documentPostProcessors(post)

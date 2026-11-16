@@ -3,7 +3,7 @@ package com.edupulse.compliance.rag;
 /**
  * Keys placed in the advisor context ({@code .advisors(a -> a.param(...))}). Spring AI copies the
  * request context into {@code Query.context()}, and both {@code MultiQueryExpander} and
- * {@code CompressionQueryTransformer} preserve it ({@code query.mutate()}), so every retrieval
+ * our transformers preserve it ({@code query.mutate()}), so every retrieval
  * thread sees the caller's tenant without ThreadLocals.
  */
 public final class RagContextKeys {
