@@ -12,6 +12,18 @@ Stack: Java 21, Spring Boot 4.1, Spring AI 2.0, Spring Cloud (Gateway, Eureka), 
 * `discovery-server` – Eureka, pornit în cluster de 2 noduri (eureka-1 ↔ eureka-2)
 * `api-gateway` – Spring Cloud Gateway: punct unic de intrare, validează JWT-ul și rutează către servicii (`lb://`)
 * `infra/nginx` – Nginx în fața celor 2 gateway-uri (load balancer)
+* `auth-service` – login, token JWT semnat RS256, cheia publică (JWKS), utilizatorii demo ai spitalului
+
+## Utilizatori demo (parola `EduPulse#2026`)
+
+| E-mail | Rol | Unitate | Clearance |
+|---|---|---|---|
+| `admin@helix.test` | ADMIN | tot spitalul | 3 |
+| `officer@helix.test` | COMPLIANCE_OFFICER | Clinical Operations | 3 |
+| `auditor@helix.test` | AUDITOR | Clinical Operations | 2 |
+| `doctor@helix.test` | EMPLOYEE | Clinical Operations | 1 |
+| `officer.billing@helix.test` | COMPLIANCE_OFFICER | Billing & Insurance | 3 |
+| `clerk.billing@helix.test` | EMPLOYEE | Billing & Insurance | 1 |
 
 ## Pornire
 

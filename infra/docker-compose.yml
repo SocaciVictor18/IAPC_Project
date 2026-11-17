@@ -81,6 +81,22 @@ services:
       <<: *healthcheck
       test: ["CMD", "curl", "-fs", "http://localhost:8762/actuator/health"]
 
+  auth-service:
+    build: { <<: *build, args: { MODULE: auth-service } }
+    image: edupulse/auth-service:latest
+    restart: unless-stopped
+    mem_limit: ${JAVA_MEM_LIMIT:-768m}
+    depends_on:
+      postgres: { condition: service_healthy }
+      eureka-1: { condition: service_started }
+    environment:
+      <<: *service-env
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD:-auth_app_pw}
+      SEED_DEFAULT_PASSWORD: ${SEED_DEFAULT_PASSWORD:-EduPulse#2026}
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "curl", "-fs", "http://localhost:9001/actuator/health"]
+
   api-gateway-1:
     build: { <<: *build, args: { MODULE: api-gateway } }
     image: edupulse/api-gateway:latest
