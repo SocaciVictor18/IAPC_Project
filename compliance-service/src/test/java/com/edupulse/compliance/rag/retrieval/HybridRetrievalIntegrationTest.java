@@ -80,7 +80,7 @@ class HybridRetrievalIntegrationTest {
                 chunk("Other organization MFA policy: authentication rules for all accounts.", OTHER_ORG, UUID.randomUUID(), 1, "other.pdf")));
 
         RagConfigData rag = new RagConfigData("m", DIMS, new LinkedHashMap<>(), null,
-                new RagConfigData.Hybrid(20, 20, 20, 0.0), null, null);
+                new RagConfigData.Hybrid(20, 20, 20, 0.0), null, null, null, null);
         retriever = new HybridDocumentRetriever(store, JdbcClient.create(ds), new TenantFilterProvider(), rag);
     }
 

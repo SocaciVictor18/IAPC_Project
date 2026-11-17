@@ -66,7 +66,7 @@ edupulse:
     data-key: ${DATA_ENCRYPTION_KEY}
 
 rag:
-  # small model for the query expansion (gpt-4o-mini / llama3.2 / claude-haiku-5-5)
+  # small model for query expansion and the topic check (gpt-4o-mini / llama3.2 / claude-haiku-5-5)
   utility-model: ${UTILITY_MODEL:llama3.2}
   embedding-dimensions: ${EMBEDDING_DIMS:768}
   # DomainSynonymTransformer: abbreviation -> words used in the documents
@@ -94,6 +94,16 @@ rag:
     enabled: true
     sentence-threshold: 0.35
     min-chars: 200
+  safeguard:
+    failure-response: "Your request was blocked by the safety policy. Please rephrase your compliance question."
+    sensitive-words:
+      - ignore previous instructions
+      - ignore all previous instructions
+      - disregard your instructions
+      - reveal the system prompt
+      - you are now
+      - jailbreak
+  topic-refusal: "I can only answer questions about the hospital's compliance, security and internal policies."
 
 management:
   endpoints.web.exposure.include: health,info

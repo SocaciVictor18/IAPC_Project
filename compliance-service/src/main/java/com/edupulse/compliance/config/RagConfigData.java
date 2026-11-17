@@ -3,10 +3,11 @@ package com.edupulse.compliance.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 
 /**
  * RAG settings from application.yml ({@code rag.*}). Same idea as the course's RagConfigData
- * (synonyms + query expander), extended with hybrid search, reranking and compression.
+ * (synonyms + query expander), extended with hybrid search, reranking, compression and guardrails.
  */
 @ConfigurationProperties("rag")
 public record RagConfigData(
@@ -17,7 +18,9 @@ public record RagConfigData(
         QueryExpander queryExpander,
         Hybrid hybrid,
         Rerank rerank,
-        Compression compression) {
+        Compression compression,
+        Safeguard safeguard,
+        String topicRefusal) {
 
     public record QueryExpander(int numberOfQueries) {
     }
@@ -29,5 +32,8 @@ public record RagConfigData(
     }
 
     public record Compression(boolean enabled, double sentenceThreshold, int minChars) {
+    }
+
+    public record Safeguard(List<String> sensitiveWords, String failureResponse) {
     }
 }

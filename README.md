@@ -17,7 +17,9 @@ Stack: Java 21, Spring Boot 4.1, Spring AI 2.0, Spring Cloud (Gateway, Eureka), 
   copii ~200 tokeni), embeddings în pgvector, fișiere > 10 MB procesate în fundal cu JobRunr
 * `compliance-service` – întrebări cu Advanced RAG (`RetrievalAugmentationAdvisor`): `DomainSynonymTransformer` (din curs),
   `MultiQueryExpander` (3 variante), hybrid search pgvector + full-text, rerank top 20 → 8, context părinte, compresie,
-  citații `[S1] [Source, Page]` (din curs); filtru pe unitate și clearance din JWT; audit log cu chunk-urile folosite
+  citații `[S1] [Source, Page]` (din curs); filtru pe unitate și clearance din JWT; audit log cu chunk-urile folosite;
+  guardrails `SafeGuardAdvisor` (prompt injection) și `TopicBoundaryAdvisor` (refuză întrebări din afara subiectului);
+  răspuns streaming (Server-Sent Events) pe `/api/compliance/ask/stream`
 
 ## Utilizatori demo (parola `EduPulse#2026`)
 
