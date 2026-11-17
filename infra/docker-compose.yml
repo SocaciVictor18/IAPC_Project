@@ -1,0 +1,49 @@
+# EduPulse AI – full stack.
+#   cp infra/.env.example infra/.env      (set DATA_ENCRYPTION_KEY; optionally an OpenAI / Claude key)
+#   docker compose -f infra/docker-compose.yml up -d --build
+
+name: edupulse
+
+x-service-env: &service-env
+  EUREKA_URL: http://eureka-1:8761/eureka/,http://eureka-2:8762/eureka/
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  DB_NAME: edupulse
+  AUTH_JWKS_URI: http://auth-service:9001/.well-known/jwks.json
+  DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY:?set DATA_ENCRYPTION_KEY in infra/.env}
+
+
+x-healthcheck: &healthcheck
+  interval: 10s
+  timeout: 5s
+  retries: 30
+  start_period: 30s
+
+x-build: &build
+  context: ..
+  dockerfile: Dockerfile
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: edupulse
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_admin_pw}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD:-auth_app_pw}
+      INGESTION_DB_PASSWORD: ${INGESTION_DB_PASSWORD:-ingestion_app_pw}
+      COMPLIANCE_DB_PASSWORD: ${COMPLIANCE_DB_PASSWORD:-compliance_app_pw}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d edupulse"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  pgdata:
