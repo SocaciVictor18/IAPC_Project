@@ -1,0 +1,99 @@
+server:
+  port: ${SERVER_PORT:9003}
+
+spring:
+  application:
+    name: compliance-service
+  threads:
+    virtual:
+      enabled: true
+  mvc:
+    async:
+      request-timeout: 180s
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:edupulse}?currentSchema=compliance,public
+    username: ${COMPLIANCE_DB_USER:compliance_app}
+    password: ${COMPLIANCE_DB_PASSWORD:compliance_app_pw}
+  flyway:
+    schemas: compliance
+    default-schema: compliance
+    create-schemas: false
+  ai:
+    # Which provider to use: openai | ollama | anthropic (chat) and openai | ollama (embeddings)
+    model:
+      chat: ${CHAT_PROVIDER:ollama}
+      embedding: ${EMBEDDING_PROVIDER:ollama}
+      image: none
+      audio.speech: none
+      audio.transcription: none
+      moderation: none
+    openai:
+      api-key: ${OPENAI_API_KEY:not-set}
+      chat:
+        options:
+          model: ${OPENAI_CHAT_MODEL:gpt-4o}
+          temperature: 0.1
+      embedding:
+        model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+    ollama:
+      base-url: ${OLLAMA_URL:http://localhost:11434}
+      chat:
+        model: ${OLLAMA_CHAT_MODEL:llama3.2}
+        options:
+          temperature: 0.1
+      embedding:
+        model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text}
+      init:
+        pull-model-strategy: ${OLLAMA_PULL:when_missing}
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:not-set}
+      chat:
+        options:
+          model: ${ANTHROPIC_CHAT_MODEL:claude-opus-5-5}
+          max-tokens: 4096
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+edupulse:
+  security:
+    jwks-uri: ${AUTH_JWKS_URI:http://localhost:9001/.well-known/jwks.json}
+  crypto:
+    data-key: ${DATA_ENCRYPTION_KEY}
+
+rag:
+  # small model for the query expansion (gpt-4o-mini / llama3.2 / claude-haiku-5-5)
+  utility-model: ${UTILITY_MODEL:llama3.2}
+  embedding-dimensions: ${EMBEDDING_DIMS:768}
+  # DomainSynonymTransformer: abbreviation -> words used in the documents
+  synonyms:
+    MFA: multi factor authentication
+    SSO: single sign-on
+    PHI: protected health information
+    EHR: electronic health record
+    DPO: data protection officer
+    PII: personally identifiable information
+    BYOD: bring your own device
+  query-expander:
+    number-of-queries: 3
+  hybrid:
+    semantic-top-k: 20
+    keyword-top-k: 20
+    final-top-k: 20
+    similarity-threshold: 0.25
+  rerank:
+    enabled: ${RERANK_ENABLED:true}
+    url: ${RERANK_URL:http://localhost:8089}
+    top-n: 8
+    timeout-ms: 3000
+  compression:
+    enabled: true
+    sentence-threshold: 0.35
+    min-chars: 200
+
+management:
+  endpoints.web.exposure.include: health,info
