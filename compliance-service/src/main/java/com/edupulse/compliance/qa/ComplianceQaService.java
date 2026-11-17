@@ -29,9 +29,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 /**
- * One compliance question: call the chat client (RAG advisor) → build the citations → write the audit record.
+ * One compliance question: call the chat client (guardrails + RAG advisors) → build the citations →
+ * write the audit record. Used by the normal endpoint and by the streaming (SSE) endpoint.
  */
 @Slf4j
 @Service
@@ -79,6 +81,27 @@ public class ComplianceQaService {
         }
     }
 
+    /** Streaming: every generated piece of text goes to {@code onToken} as soon as it arrives. */
+    public AskResponse stream(Request r, Consumer<String> onToken) {
+        StringBuilder answer = new StringBuilder();
+        List<Document> context = List.of();
+        try {
+            for (ChatClientResponse response : prompt(r).stream().chatClientResponse().toIterable()) {
+                if (context.isEmpty()) {
+                    context = contextDocuments(response);
+                }
+                String token = text(response.chatResponse());
+                if (!token.isEmpty()) {
+                    answer.append(token);
+                    onToken.accept(token);
+                }
+            }
+            return finish(r, answer.toString(), context);
+        } catch (Exception e) {
+            throw failed(r, e);
+        }
+    }
+
     private ChatClient.ChatClientRequestSpec prompt(Request r) {
         String organization = r.tenant().organizationName() == null ? "the hospital" : r.tenant().organizationName();
         return chatClient.prompt()
@@ -100,6 +123,12 @@ public class ComplianceQaService {
     }
 
     private Outcome outcome(RagTrace trace, String answer, List<Document> context) {
+        if (trace.outOfScope()) {
+            return Outcome.OUT_OF_SCOPE;
+        }
+        if (answer.strip().equals(rag.safeguard().failureResponse())) {
+            return Outcome.BLOCKED_SAFEGUARD;
+        }
         if (context.isEmpty() || answer.contains("I don't know based on the available documents")) {
             return Outcome.NO_CONTEXT;
         }

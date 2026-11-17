@@ -5,6 +5,7 @@ import com.edupulse.common.security.Roles;
 import com.edupulse.common.security.TenantContext;
 import com.edupulse.compliance.config.RagConfigData;
 import com.edupulse.compliance.qa.CitationExtractor;
+import com.edupulse.compliance.rag.guardrails.TopicBoundaryAdvisor;
 import com.edupulse.compliance.rag.postprocessing.CitationHeaderPostProcessor;
 import com.edupulse.compliance.rag.preprocessing.DomainSynonymTransformer;
 import com.edupulse.compliance.rag.retrieval.ReciprocalRankFusion;
@@ -27,7 +28,7 @@ class RagComponentsTest {
         LinkedHashMap<String, String> synonyms = new LinkedHashMap<>();
         synonyms.put("MFA", "multi factor authentication");
         synonyms.put("PHI", "protected health information");
-        return new RagConfigData("m", 768, synonyms, null, null, null, null);
+        return new RagConfigData("m", 768, synonyms, null, null, null, null, null, null);
     }
 
     private static TenantContext tenant(String role) {
@@ -102,6 +103,13 @@ class RagComponentsTest {
         Document d = Document.builder().id("x").text(passage).metadata(Map.of(MetadataKeys.SOURCE, "a.pdf")).build();
         Document labelled = new CitationHeaderPostProcessor().process(new Query("How should I handle MFA?"), List.of(d)).get(0);
         assertThat(String.valueOf(labelled.getMetadata().get(MetadataKeys.CHILD_SNIPPET))).startsWith("• Multi-Factor Authentication (MFA)");
+    }
+
+    @Test
+    void topicGuardAcceptsComplianceWordsWithoutCallingTheLlm() {
+        assertThat(TopicBoundaryAdvisor.mentionsComplianceTopic("How do I report a lost laptop?")).isTrue();
+        assertThat(TopicBoundaryAdvisor.mentionsComplianceTopic("Who may open a patient's EHR?")).isTrue();
+        assertThat(TopicBoundaryAdvisor.mentionsComplianceTopic("Give me a pasta recipe")).isFalse();
     }
 
     private static Document doc(String id) {

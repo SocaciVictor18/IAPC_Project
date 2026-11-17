@@ -1,5 +1,6 @@
 package com.edupulse.compliance.config;
 
+import com.edupulse.compliance.rag.guardrails.TopicBoundaryAdvisor;
 import com.edupulse.compliance.rag.postprocessing.CitationHeaderPostProcessor;
 import com.edupulse.compliance.rag.postprocessing.ContextCompressionPostProcessor;
 import com.edupulse.compliance.rag.postprocessing.CrossEncoderRerankPostProcessor;
@@ -8,6 +9,7 @@ import com.edupulse.compliance.rag.preprocessing.DomainSynonymTransformer;
 import com.edupulse.compliance.rag.preprocessing.SafeMultiQueryExpander;
 import com.edupulse.compliance.rag.retrieval.HybridDocumentRetriever;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.SafeGuardAdvisor;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.PromptTemplate;
@@ -34,7 +36,7 @@ import java.util.stream.Collectors;
  * The provider (OpenAI / Ollama / Claude) is chosen in application.yml with
  * {@code spring.ai.model.chat} and {@code spring.ai.model.embedding}.
  * <pre>
- * RetrievalAugmentationAdvisor
+ * SafeGuardAdvisor → TopicBoundaryAdvisor → RetrievalAugmentationAdvisor
  *   pre-retrieval:  DomainSynonymTransformer → MultiQueryExpander (3 variants + original)
  *   retrieval:      HybridDocumentRetriever (pgvector + full-text, tenant filter)
  *   post-retrieval: Rerank (top 20 → 8) → ParentContext → ContextCompression → CitationHeader
@@ -44,7 +46,7 @@ import java.util.stream.Collectors;
 @Configuration(proxyBeanMethods = false)
 public class AIProviderConfig {
 
-    /** Small model at temperature 0 for the query expansion. */
+    /** Small model at temperature 0 for the query expansion and the topic check. */
     @Bean
     @Qualifier("utilityChatClientBuilder")
     ChatClient.Builder utilityChatClientBuilder(ChatModel chatModel, RagConfigData rag) {
@@ -119,10 +121,27 @@ public class AIProviderConfig {
                 .build();
     }
 
+    /** Blocks prompt-injection phrases before anything else runs. */
+    @Bean
+    SafeGuardAdvisor safeGuardAdvisor(RagConfigData rag) {
+        return SafeGuardAdvisor.builder()
+                .sensitiveWords(rag.safeguard().sensitiveWords())
+                .failureResponse(rag.safeguard().failureResponse())
+                .order(-200)
+                .build();
+    }
+
+    @Bean
+    TopicBoundaryAdvisor topicBoundaryAdvisor(@Qualifier("utilityChatClientBuilder") ChatClient.Builder utility,
+                                              RagConfigData rag) {
+        return new TopicBoundaryAdvisor(utility.clone().build(), rag.topicRefusal());
+    }
+
     /** The Q&amp;A chat client (course: openAiAdvancedRagChatClient). */
     @Bean
     @Qualifier("complianceChatClient")
-    ChatClient complianceChatClient(ChatModel chatModel, RetrievalAugmentationAdvisor ragAdvisor) {
-        return ChatClient.builder(chatModel).defaultAdvisors(ragAdvisor).build();
+    ChatClient complianceChatClient(ChatModel chatModel, SafeGuardAdvisor safeGuard,
+                                    TopicBoundaryAdvisor topicBoundary, RetrievalAugmentationAdvisor ragAdvisor) {
+        return ChatClient.builder(chatModel).defaultAdvisors(safeGuard, topicBoundary, ragAdvisor).build();
     }
 }
