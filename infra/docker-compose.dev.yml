@@ -1,0 +1,44 @@
+# Only the infrastructure, for running the Java services from the IDE (localhost ports).
+#   docker compose -f infra/docker-compose.dev.yml up -d
+name: edupulse-dev
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: edupulse
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_admin_pw}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD:-auth_app_pw}
+      INGESTION_DB_PASSWORD: ${INGESTION_DB_PASSWORD:-ingestion_app_pw}
+      COMPLIANCE_DB_PASSWORD: ${COMPLIANCE_DB_PASSWORD:-compliance_app_pw}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata-dev:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d edupulse"]
+      interval: 5s
+      retries: 30
+
+  tei-reranker:
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.8
+    mem_limit: 4g
+    command: ["--model-id", "BAAI/bge-reranker-base", "--port", "80", "--tokenization-workers", "4"]
+    ports:
+      - "8089:80"
+    volumes:
+      - tei-data:/data
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+
+volumes:
+  pgdata-dev:
+  tei-data:
+  ollama-data:
