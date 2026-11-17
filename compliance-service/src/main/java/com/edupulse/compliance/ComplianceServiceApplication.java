@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.annotation.Import;
 
-/** Advanced RAG Q&amp;A with citations, audit trail and conversation history. */
+/** Advanced RAG Q&amp;A with citations and guardrails, audit trail, conversation history and gap analysis. */
 @SpringBootApplication
 @ConfigurationPropertiesScan
 @Import({ResourceServerSecurityConfig.class, CryptoConfig.class, ApiExceptionHandler.class})

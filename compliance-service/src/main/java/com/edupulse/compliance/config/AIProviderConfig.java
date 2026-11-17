@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 @Configuration(proxyBeanMethods = false)
 public class AIProviderConfig {
 
-    /** Small model at temperature 0 for the query expansion and the topic check. */
+    /** Small model at temperature 0 for query expansion, topic check and gap-analysis steps. */
     @Bean
     @Qualifier("utilityChatClientBuilder")
     ChatClient.Builder utilityChatClientBuilder(ChatModel chatModel, RagConfigData rag) {

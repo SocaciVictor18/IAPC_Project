@@ -66,7 +66,7 @@ edupulse:
     data-key: ${DATA_ENCRYPTION_KEY}
 
 rag:
-  # small model for query expansion and the topic check (gpt-4o-mini / llama3.2 / claude-haiku-5-5)
+  # small model for query expansion, topic check and gap analysis (gpt-4o-mini / llama3.2 / claude-haiku-5-5)
   utility-model: ${UTILITY_MODEL:llama3.2}
   embedding-dimensions: ${EMBEDDING_DIMS:768}
   # DomainSynonymTransformer: abbreviation -> words used in the documents
