@@ -1,0 +1,16 @@
+MEDICAL DEVICE SECURITY PROCEDURE
+Owner: Biomedical Engineering and IT Security - Version 1.2
+
+1. Inventory
+All connected medical devices (infusion pumps, monitors, imaging systems) are registered in the medical device inventory
+with their location, owner, software version and network address.
+
+2. Network
+Medical devices are placed in a separate network segment and cannot reach the internet directly.
+
+3. Patching
+Security patches approved by the manufacturer are installed once a year during planned maintenance.
+Devices that can no longer be patched are isolated or replaced.
+
+4. Incidents
+Any malfunction that may be caused by a cyber attack is reported immediately to IT Security and to the device manufacturer.
