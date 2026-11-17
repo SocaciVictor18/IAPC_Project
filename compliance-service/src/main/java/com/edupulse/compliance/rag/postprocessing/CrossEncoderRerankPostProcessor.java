@@ -49,7 +49,7 @@ public class CrossEncoderRerankPostProcessor implements DocumentPostProcessor {
         return rerank(query.text(), documents, props.topN());
     }
 
-    /** Reranks and keeps the best {@code topN}. */
+    /** Also used by the gap analysis (with a smaller topN). */
     public List<Document> rerank(String question, List<Document> allResults, int topN) {
         // the results of the 4 queries are merged by Spring AI; keep the 20 best by hybrid (RRF) score
         List<Document> documents = allResults.stream()
