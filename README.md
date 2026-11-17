@@ -15,6 +15,9 @@ Stack: Java 21, Spring Boot 4.1, Spring AI 2.0, Spring Cloud (Gateway, Eureka), 
 * `auth-service` – login, token JWT semnat RS256, cheia publică (JWKS), utilizatorii demo ai spitalului
 * `ingestion-service` – upload PDF / DOCX / TXT (doar ADMIN și COMPLIANCE_OFFICER), chunking ierarhic (părinți ~1000 tokeni,
   copii ~200 tokeni), embeddings în pgvector, fișiere > 10 MB procesate în fundal cu JobRunr
+* `compliance-service` – întrebări cu Advanced RAG (`RetrievalAugmentationAdvisor`): `DomainSynonymTransformer` (din curs),
+  `MultiQueryExpander` (3 variante), hybrid search pgvector + full-text, rerank top 20 → 8, context părinte, compresie,
+  citații `[S1] [Source, Page]` (din curs); filtru pe unitate și clearance din JWT; audit log cu chunk-urile folosite
 
 ## Utilizatori demo (parola `EduPulse#2026`)
 
@@ -33,6 +36,7 @@ Stack: Java 21, Spring Boot 4.1, Spring AI 2.0, Spring Cloud (Gateway, Eureka), 
 cp infra/.env.example infra/.env
 docker compose -f infra/docker-compose.yml up -d --build
 docker compose -f infra/docker-compose.yml exec ollama ollama pull nomic-embed-text
+docker compose -f infra/docker-compose.yml exec ollama ollama pull llama3.2
 bash scripts/seed-documents.sh
 ```
 
