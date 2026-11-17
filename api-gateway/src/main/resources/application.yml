@@ -1,0 +1,41 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          httpclient:
+            response-timeout: 180s
+          routes:
+            # lb://<name> = look the service up in Eureka and load-balance between its instances
+            - id: auth
+              uri: lb://auth-service
+              predicates:
+                - Path=/api/auth/**,/api/me,/.well-known/jwks.json
+            - id: ingestion
+              uri: lb://ingestion-service
+              predicates:
+                - Path=/api/documents,/api/documents/**
+            - id: compliance
+              uri: lb://compliance-service
+              predicates:
+                - Path=/api/compliance/**,/api/conversations,/api/conversations/**,/api/audit,/api/audit/**,/api/gap-analysis,/api/gap-analysis/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+    registry-fetch-interval-seconds: 5   # see new service instances quickly
+  instance:
+    prefer-ip-address: true
+
+edupulse:
+  security:
+    jwks-uri: ${AUTH_JWKS_URI:http://localhost:9001/.well-known/jwks.json}
+
+management:
+  endpoints.web.exposure.include: health,info

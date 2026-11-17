@@ -45,5 +45,80 @@ services:
       timeout: 5s
       retries: 30
 
+  eureka-1:
+    build: { <<: *build, args: { MODULE: discovery-server } }
+    image: edupulse/discovery-server:latest
+    restart: unless-stopped
+    mem_limit: ${JAVA_MEM_LIMIT:-768m}
+    hostname: eureka-1
+    environment:
+      SERVER_PORT: "8761"
+      EUREKA_HOSTNAME: eureka-1
+      EUREKA_REGISTER: "true"
+      EUREKA_FETCH: "true"
+      EUREKA_PEERS: http://eureka-2:8762/eureka/
+    ports:
+      - "8761:8761"
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "curl", "-fs", "http://localhost:8761/actuator/health"]
+
+  eureka-2:
+    image: edupulse/discovery-server:latest
+    restart: unless-stopped
+    mem_limit: ${JAVA_MEM_LIMIT:-768m}
+    hostname: eureka-2
+    depends_on: [eureka-1]
+    environment:
+      SERVER_PORT: "8762"
+      EUREKA_HOSTNAME: eureka-2
+      EUREKA_REGISTER: "true"
+      EUREKA_FETCH: "true"
+      EUREKA_PEERS: http://eureka-1:8761/eureka/
+    ports:
+      - "8762:8762"
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "curl", "-fs", "http://localhost:8762/actuator/health"]
+
+  api-gateway-1:
+    build: { <<: *build, args: { MODULE: api-gateway } }
+    image: edupulse/api-gateway:latest
+    restart: unless-stopped
+    mem_limit: ${JAVA_MEM_LIMIT:-768m}
+    depends_on: [eureka-1, eureka-2]
+    environment:
+      EUREKA_URL: http://eureka-1:8761/eureka/,http://eureka-2:8762/eureka/
+      AUTH_JWKS_URI: http://auth-service:9001/.well-known/jwks.json
+    ports:
+      - "8080:8080"
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "curl", "-fs", "http://localhost:8080/actuator/health"]
+
+  api-gateway-2:
+    image: edupulse/api-gateway:latest
+    restart: unless-stopped
+    mem_limit: ${JAVA_MEM_LIMIT:-768m}
+    depends_on: [api-gateway-1]
+    environment:
+      EUREKA_URL: http://eureka-1:8761/eureka/,http://eureka-2:8762/eureka/
+      AUTH_JWKS_URI: http://auth-service:9001/.well-known/jwks.json
+    ports:
+      - "8081:8080"
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "curl", "-fs", "http://localhost:8080/actuator/health"]
+
+  nginx:
+    image: nginx:1.28
+    restart: unless-stopped
+    depends_on: [api-gateway-1, api-gateway-2]
+    ports:
+      - "${HTTP_PORT:-80}:80"   # set HTTP_PORT=8088 if port 80 is taken (e.g. Rancher Desktop's Traefik)
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/html:/usr/share/nginx/html:ro
+
 volumes:
   pgdata:
