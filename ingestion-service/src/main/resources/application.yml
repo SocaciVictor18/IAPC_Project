@@ -1,0 +1,95 @@
+server:
+  port: ${SERVER_PORT:9002}
+
+spring:
+  application:
+    name: ingestion-service
+  threads:
+    virtual:
+      enabled: true
+  servlet:
+    multipart:
+      max-file-size: ${MAX_UPLOAD_SIZE:200MB}
+      max-request-size: ${MAX_UPLOAD_SIZE:200MB}
+      file-size-threshold: 2MB
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:edupulse}?currentSchema=ingestion,public
+    username: ${INGESTION_DB_USER:ingestion_app}
+    password: ${INGESTION_DB_PASSWORD:ingestion_app_pw}
+    hikari:
+      maximum-pool-size: 30
+  flyway:
+    schemas: ingestion
+    default-schema: ingestion
+    create-schemas: false
+    placeholders:
+      embedding_dims: ${EMBEDDING_DIMS:768}
+  mvc:
+    problemdetails:
+      enabled: true
+  ai:
+    model:
+      chat: none        # the ingestion service only needs the embedding model
+      embedding: ${EMBEDDING_PROVIDER:ollama}
+      image: none
+      audio.speech: none
+      audio.transcription: none
+      moderation: none
+    openai:
+      api-key: ${OPENAI_API_KEY:not-set}
+      embedding:
+        model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+    ollama:
+      base-url: ${OLLAMA_URL:http://localhost:11434}
+      embedding:
+        model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text}
+      init:
+        pull-model-strategy: ${OLLAMA_PULL:when_missing}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+    registry-fetch-interval-seconds: 5
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+
+jobrunr:
+  background-job-server:
+    enabled: true
+    worker-count: ${JOBRUNR_WORKERS:50}
+    poll-interval-in-seconds: 5
+  dashboard:
+    enabled: ${JOBRUNR_DASHBOARD:true}
+    port: 8000
+  database:
+    table-prefix: ingestion.
+  jobs:
+    default-number-of-retries: 2
+
+edupulse:
+  security:
+    jwks-uri: ${AUTH_JWKS_URI:http://localhost:9001/.well-known/jwks.json}
+  crypto:
+    data-key: ${DATA_ENCRYPTION_KEY}
+  ingestion:
+    storage-root: ${STORAGE_ROOT:./data/uploads}
+    async-threshold-bytes: ${ASYNC_THRESHOLD_BYTES:10485760}   # 10 MB
+    max-upload-bytes: ${MAX_UPLOAD_BYTES:209715200}            # 200 MB
+    embedding-dimensions: ${EMBEDDING_DIMS:768}
+    embedding-batch-size: 64
+    embedding-concurrency: ${EMBEDDING_CONCURRENCY:8}
+    chunking:
+      parent-tokens: 1000
+      parent-min-chars: 350
+      child-tokens: 200
+      child-min-chars: 100
+      child-overlap-words: 22      # ~30 tokens carried over from the previous child
+      txt-lines-per-page: 60
+      docx-paragraphs-per-section: 8
+
+management:
+  endpoints.web.exposure.include: health,info
+  endpoint.health.probes.enabled: true

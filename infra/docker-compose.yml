@@ -12,6 +12,17 @@ x-service-env: &service-env
   AUTH_JWKS_URI: http://auth-service:9001/.well-known/jwks.json
   DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY:?set DATA_ENCRYPTION_KEY in infra/.env}
 
+x-ai-env: &ai-env
+  CHAT_PROVIDER: ${CHAT_PROVIDER:-ollama}
+  EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-ollama}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-not-set}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-not-set}
+  ANTHROPIC_CHAT_MODEL: ${ANTHROPIC_CHAT_MODEL:-claude-opus-5-5}
+  OPENAI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:-gpt-4o}
+  OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+  UTILITY_MODEL: ${UTILITY_MODEL:-llama3.2}
+  EMBEDDING_DIMS: ${EMBEDDING_DIMS:-768}
+  OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
 
 x-healthcheck: &healthcheck
   interval: 10s
@@ -97,6 +108,26 @@ services:
       <<: *healthcheck
       test: ["CMD", "curl", "-fs", "http://localhost:9001/actuator/health"]
 
+  ingestion-service:
+    build: { <<: *build, args: { MODULE: ingestion-service } }
+    image: edupulse/ingestion-service:latest
+    restart: unless-stopped
+    mem_limit: ${JAVA_MEM_LIMIT:-768m}
+    depends_on:
+      postgres: { condition: service_healthy }
+      auth-service: { condition: service_healthy }
+    environment:
+      <<: [*service-env, *ai-env]
+      INGESTION_DB_PASSWORD: ${INGESTION_DB_PASSWORD:-ingestion_app_pw}
+      STORAGE_ROOT: /data/uploads
+    volumes:
+      - uploads:/data/uploads
+    ports:
+      - "8000:8000"   # JobRunr dashboard (background ingestion jobs)
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "curl", "-fs", "http://localhost:9002/actuator/health"]
+
   api-gateway-1:
     build: { <<: *build, args: { MODULE: api-gateway } }
     image: edupulse/api-gateway:latest
@@ -136,5 +167,20 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/html:/usr/share/nginx/html:ro
 
+  ollama:
+    # Local LLM (llama3.2) and embedding model (nomic-embed-text) – no API key needed.
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    # CPU inference would otherwise take every core and starve the JVMs (missed Eureka heartbeats).
+    cpus: ${OLLAMA_CPUS:-8}
+    environment:
+      OLLAMA_NUM_PARALLEL: "2"
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+
 volumes:
   pgdata:
+  uploads:
+  ollama-data:

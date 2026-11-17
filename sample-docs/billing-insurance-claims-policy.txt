@@ -1,0 +1,13 @@
+BILLING AND INSURANCE CLAIMS POLICY
+Owner: Billing & Insurance department - Confidential
+
+1. Approval of claims
+Insurance claims up to 2,000 EUR are approved by the billing clerk.
+Claims between 2,000 EUR and 10,000 EUR require approval by the Billing Manager.
+Claims above 10,000 EUR require written approval by the Head of Billing and the Chief Financial Officer.
+
+2. Patient invoices
+Invoices may only contain the minimum medical information needed by the insurer (diagnosis code, procedure code, date).
+
+3. Segregation of duties
+The person who creates a claim may never approve the same claim.
